@@ -47,6 +47,18 @@ function getClashUdpValue(proxy, defaultEnabled = true) {
     return defaultEnabled;
 }
 
+function createXhttpOpts(transport) {
+    if (transport?.type !== 'xhttp') {
+        return undefined;
+    }
+    const opts = {};
+    if (transport.host !== undefined) opts.host = transport.host;
+    if (transport.path !== undefined) opts.path = transport.path;
+    if (transport.mode !== undefined) opts.mode = transport.mode;
+    if (transport.x_padding_bytes !== undefined) opts['x-padding-bytes'] = transport.x_padding_bytes;
+    return Object.keys(opts).length > 0 ? opts : undefined;
+}
+
 export class ClashConfigBuilder extends BaseConfigBuilder {
     constructor(inputString, selectedRules, customRules, baseConfig, lang, userAgent, groupByCountry = false, enableClashUI = false, externalController, externalUiDownloadUrl, includeAutoSelect = true) {
         if (!baseConfig) {
@@ -202,6 +214,7 @@ export class ClashConfigBuilder extends BaseConfigBuilder {
                         path: proxy.transport.path,
                         headers: proxy.transport.headers
                     } : undefined,
+                    'xhttp-opts': createXhttpOpts(proxy.transport),
                     'reality-opts': proxy.tls?.reality?.enabled ? {
                         'public-key': proxy.tls.reality.public_key,
                         'short-id': proxy.tls.reality.short_id,

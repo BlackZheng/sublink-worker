@@ -310,14 +310,43 @@ export function createTlsConfig(params) {
 }
 
 export function createTransportConfig(params) {
-	return {
+	const extra = parseJsonObject(params.extra);
+	const transport = {
 		type: params.type,
 		path: params.path ?? undefined,
-		...(params.host && { 'headers': { 'host': params.host } }),
 		...(params.type === 'grpc' && {
 			service_name: params.serviceName ?? undefined,
 		})
 	};
+
+	if (params.host) {
+		if (params.type === 'xhttp') {
+			transport.host = params.host;
+		} else {
+			transport.headers = { host: params.host };
+		}
+	}
+
+	if (params.type === 'xhttp') {
+		transport.mode = params.mode ?? undefined;
+		transport.x_padding_bytes = params.x_padding_bytes
+			?? params['x-padding-bytes']
+			?? extra.xPaddingBytes
+			?? extra['x-padding-bytes']
+			?? undefined;
+	}
+
+	return transport;
+}
+
+function parseJsonObject(value) {
+	if (!value) return {};
+	try {
+		const parsed = JSON.parse(value);
+		return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+	} catch (_) {
+		return {};
+	}
 }
 
 // Parse boolean value from various formats
