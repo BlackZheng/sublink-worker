@@ -1,4 +1,4 @@
-import { parseServerInfo, parseUrlParams, createTlsConfig, createTransportConfig, parseBool } from '../../utils.js';
+import { parseServerInfo, parseUrlParams, createTlsConfig, createTransportConfig, parseBool, parseArray } from '../../utils.js';
 
 export function parseVless(url) {
     const { addressPart, params, name } = parseUrlParams(url);
@@ -6,10 +6,10 @@ export function parseVless(url) {
     const { host, port } = parseServerInfo(serverInfo);
 
     const tls = createTlsConfig(params);
-    if (tls.reality) {
+    if (tls.enabled && (params.fp || tls.reality)) {
         tls.utls = {
             enabled: true,
-            fingerprint: 'chrome'
+            fingerprint: params.fp || 'chrome'
         };
     }
     const transport = params.type !== 'tcp' ? createTransportConfig(params) : undefined;
@@ -29,6 +29,7 @@ export function parseVless(url) {
         transport,
         network: 'tcp',
         flow: params.flow ?? undefined,
+        alpn: parseArray(params.alpn),
         // Include udp if explicitly specified - will be used for Clash output
         // SingBoxConfigBuilder will strip this field for sing-box output
         ...(udp !== undefined ? { udp } : {})

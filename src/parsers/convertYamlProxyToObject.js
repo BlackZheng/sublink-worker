@@ -97,6 +97,16 @@ export function convertYamlProxyToObject(p) {
                     const g = p['grpc-opts'] || {};
                     return { type: 'grpc', service_name: g['grpc-service-name'] };
                 }
+                if (net === 'xhttp') {
+                    const x = p['xhttp-opts'] || {};
+                    return {
+                        type: 'xhttp',
+                        path: x.path,
+                        host: x.host,
+                        mode: x.mode,
+                        x_padding_bytes: x['x-padding-bytes']
+                    };
+                }
                 if (net === 'http') {
                     const h = p['http-opts'] || {};
                     return { type: 'http', method: h.method || 'GET', path: h.path, headers: h.headers };
