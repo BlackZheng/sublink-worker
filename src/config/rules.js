@@ -37,11 +37,6 @@ export const UNIFIED_RULES = [
 		ip_rules: ['private']
 	},
 	{
-		name: 'Location:CN',
-		site_rules: ['geolocation-cn', 'cn'],
-		ip_rules: ['cn']
-	},
-	{
 		name: 'Telegram',
 		site_rules: [],
 		ip_rules: ['telegram']
@@ -95,6 +90,11 @@ export const UNIFIED_RULES = [
 		name: 'Non-China',
 		site_rules: ['geolocation-!cn'],
 		ip_rules: []
+	},
+	{
+		name: 'Location:CN',
+		site_rules: ['geolocation-cn', 'cn'],
+		ip_rules: ['cn']
 	}
 ];
 
