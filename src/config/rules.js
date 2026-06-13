@@ -83,7 +83,7 @@ export const UNIFIED_RULES = [
 	},
 	{
 		name: 'Financial',
-		site_rules: ['paypal', 'visa', 'mastercard', 'stripe', 'wise'],
+		site_rules: ['paypal', 'visa', 'mastercard', 'stripe', 'wise', 'category-finance'],
 		ip_rules: []
 	},
 	{
