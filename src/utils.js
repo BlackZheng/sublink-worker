@@ -303,6 +303,7 @@ export function createTlsConfig(params) {
 				enabled: true,
 				public_key: params.pbk,
 				short_id: params.sid,
+				support_x25519mlkem768: parseBool(params['support-x25519mlkem768']),
 			};
 		}
 	}

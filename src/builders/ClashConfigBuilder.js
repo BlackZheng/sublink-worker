@@ -1,7 +1,7 @@
 import yaml from 'js-yaml';
 import { CLASH_CONFIG, generateRules, generateClashRuleSets, getOutbounds, PREDEFINED_RULE_SETS, DIRECT_DEFAULT_RULES } from '../config/index.js';
 import { BaseConfigBuilder } from './BaseConfigBuilder.js';
-import { deepCopy, groupProxiesByCountry, buildCountryNameFilter } from '../utils.js';
+import { deepCopy, groupProxiesByCountry, buildCountryNameFilter, parseBool } from '../utils.js';
 import { addProxyWithDedup } from './helpers/proxyHelpers.js';
 import { buildSelectorMembers, buildNodeSelectMembers, buildCustomRuleMembers, uniqueNames } from './helpers/groupBuilder.js';
 import { emitClashRules, sanitizeClashProxyGroups } from './helpers/clashConfigUtils.js';
@@ -58,6 +58,26 @@ function createXhttpOpts(transport) {
     if (transport.x_padding_bytes !== undefined) opts['x-padding-bytes'] = transport.x_padding_bytes;
     return Object.keys(opts).length > 0 ? opts : undefined;
 }
+
+function withRealityMlkemDefault(reality) {
+    return {
+        ...reality,
+        // New REALITY servers require this key share; explicit false keeps legacy opt-outs.
+        'support-x25519mlkem768': parseBool(reality['support-x25519mlkem768'], true)
+    };
+}
+
+function createRealityOpts(reality) {
+    if (!reality?.enabled) return undefined;
+    return withRealityMlkemDefault({
+        'public-key': reality.public_key,
+        'short-id': reality.short_id,
+        'support-x25519mlkem768': reality.support_x25519mlkem768
+    });
+}
+
+// Provider nodes bypass convertProxy and must keep the default on subsequent refreshes.
+const REALITY_MLKEM_OVERRIDE_EXPR = '(select(.["reality-opts"] != null and .["reality-opts"]["support-x25519mlkem768"] == null) | .["reality-opts"]["support-x25519mlkem768"]) = true';
 
 export class ClashConfigBuilder extends BaseConfigBuilder {
     constructor(inputString, selectedRules, customRules, baseConfig, lang, userAgent, groupByCountry = false, enableClashUI = false, externalController, externalUiDownloadUrl, includeAutoSelect = true) {
@@ -215,10 +235,7 @@ export class ClashConfigBuilder extends BaseConfigBuilder {
                         headers: proxy.transport.headers
                     } : undefined,
                     'xhttp-opts': createXhttpOpts(proxy.transport),
-                    'reality-opts': proxy.tls?.reality?.enabled ? {
-                        'public-key': proxy.tls.reality.public_key,
-                        'short-id': proxy.tls.reality.short_id,
-                    } : undefined,
+                    'reality-opts': createRealityOpts(proxy.tls?.reality),
                     'grpc-opts': proxy.transport?.type === 'grpc' ? {
                         'grpc-service-name': proxy.transport.service_name,
                     } : undefined,
@@ -265,10 +282,7 @@ export class ClashConfigBuilder extends BaseConfigBuilder {
                         path: proxy.transport.path,
                         headers: proxy.transport.headers
                     } : undefined,
-                    'reality-opts': proxy.tls?.reality?.enabled ? {
-                        'public-key': proxy.tls.reality.public_key,
-                        'short-id': proxy.tls.reality.short_id,
-                    } : undefined,
+                    'reality-opts': createRealityOpts(proxy.tls?.reality),
                     'grpc-opts': proxy.transport?.type === 'grpc' ? {
                         'grpc-service-name': proxy.transport.service_name,
                     } : undefined,
@@ -693,6 +707,22 @@ export class ClashConfigBuilder extends BaseConfigBuilder {
             this.config['proxy-providers'] = {
                 ...this.config['proxy-providers'],
                 ...this.generateProxyProviders()
+            };
+        }
+
+        // Base templates can contain nodes that did not pass through the protocol parsers.
+        for (const proxy of this.config.proxies || []) {
+            if (proxy?.['reality-opts']) {
+                proxy['reality-opts'] = withRealityMlkemDefault(proxy['reality-opts']);
+            }
+        }
+        for (const provider of Object.values(this.config['proxy-providers'] || {})) {
+            if (!provider || typeof provider !== 'object') continue;
+            const override = provider.override || {};
+            const expressions = override['override-expr'] || [];
+            provider.override = {
+                ...override,
+                'override-expr': [...new Set([...expressions, REALITY_MLKEM_OVERRIDE_EXPR])]
             };
         }
 

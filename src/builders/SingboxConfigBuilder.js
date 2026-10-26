@@ -78,6 +78,12 @@ export class SingboxConfigBuilder extends BaseConfigBuilder {
         delete sanitized.udp;
         delete sanitized.network;
 
+        // The ML-KEM switch is Mihomo-specific and is rejected by sing-box's TLS schema.
+        if (sanitized.tls?.reality && 'support_x25519mlkem768' in sanitized.tls.reality) {
+            const { support_x25519mlkem768, ...reality } = sanitized.tls.reality;
+            sanitized.tls = { ...sanitized.tls, reality };
+        }
+
         // Remove 'alpn' from root level - it should only exist inside 'tls' object for sing-box
         // For protocols like vless/vmess, alpn belongs inside the tls configuration
         if (sanitized.alpn && sanitized.tls) {

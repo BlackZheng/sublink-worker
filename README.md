@@ -66,6 +66,8 @@ Sing-Box • Clash • Xray/V2Ray • Surge
 - Flexible API for script automation
 - Multi-language support (Chinese, English, Persian, Russian)
 - Web interface with predefined rule sets and customizable policy groups
+- REALITY nodes in Clash/Mihomo output default to `reality-opts.support-x25519mlkem768: true`. Explicit `false` in share links or Clash YAML is preserved for legacy servers.
+- Clash proxy-providers apply the same default on refresh via `override-expr` (Mihomo 1.19.33+). For a legacy server, set `support-x25519mlkem768=false` in its share link or `support-x25519mlkem768: false` in its `reality-opts`.
 
 ## 🤝 Contributing
 
